@@ -1,0 +1,258 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 22px;
+  position: relative;
+  background-image: url('../assets/auth.jpg');
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.auth-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 12% 20%, rgba(13, 45, 252, 0.16), transparent 16%),
+    radial-gradient(circle at 88% 14%, rgba(79, 70, 229, 0.12), transparent 18%),
+    radial-gradient(circle at 82% 84%, rgba(14, 115, 255, 0.14), transparent 18%);
+  pointer-events: none;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  padding: 36px 28px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(10, 20, 50, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card h1 {
+  margin-bottom: 20px;
+  font-size: clamp(2rem, 2.6vw, 2.3rem);
+  color: #101935;
+  text-align: center;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 12px;
+}
+
+.MuiTextField-root {
+  width: 100%;
+}
+
+.MuiOutlinedInput-root {
+  background: #fff;
+}
+
+.auth-footer,
+.auth-action-row,
+.home-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.auth-small-link,
+.home-cta {
+  border: none;
+  background: none;
+  color: #0f2fd5;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-button {
+  margin-top: 8px;
+}
+
+.auth-small-link:hover,
+.home-cta:hover {
+  opacity: 0.88;
+}
+
+.message-bar {
+  min-height: 1.3rem;
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.auth-error {
+  color: #dc2626;
+  font-size: 0.95rem;
+  margin-top: -8px;
+  margin-bottom: 6px;
+}
+
+.demo-credentials {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.demo-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.credential-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  padding: 6px 0;
+}
+
+.credential-item strong {
+  color: #374151;
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.credential-item span {
+  color: #0f2fd5;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.demo-button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #0f2fd5;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.demo-button:hover {
+  opacity: 0.9;
+}
+
+.demo-button:active {
+  opacity: 0.8;
+}
+
+.text-danger {
+  color: #dc2626;
+}
+
+.text-success {
+  color: #16a34a;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+}
+
+.home-page .auth-card {
+  max-width: 760px;
+  text-align: center;
+}
+
+.home-card {
+  padding: 48px 42px;
+}
+
+.home-copy {
+  color: #4f5785;
+  line-height: 1.85;
+  margin-top: 10px;
+  margin-bottom: 22px;
+}
+
+.home-contact {
+  margin-top: 28px;
+  color: #5b6284;
+  font-size: 0.95rem;
+}
+
+.home-actions {
+  justify-content: center;
+}
+
+.home-cta {
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: #0f2fd5;
+  color: #fff;
+  font-weight: 700;
+}
+
+.home-cta-secondary {
+  background: rgba(15, 47, 213, 0.08);
+  color: #0f2fd5;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.feature-card {
+  border: 1px solid rgba(15, 47, 213, 0.12);
+  border-radius: 20px;
+  padding: 24px 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #1a2140;
+}
+
+.feature-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #0f2fd5;
+}
+
+.feature-card p {
+  margin: 0;
+  color: #4f5785;
+  line-height: 1.7;
+  font-size: 0.94rem;
+}
+
+@media (max-width: 840px) {
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card,
+  .home-card {
+    padding: 30px 22px;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
