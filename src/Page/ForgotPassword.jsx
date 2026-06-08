@@ -106,7 +106,7 @@ export default function ForgotPassword() {
 
     setLoading(true)
     try {
-      const res = await axios.post(`${BASE_URL}/user/send-otp`, { email: email.trim() })
+      const res = await axios.post(`${BASE_URL}/api/user/send-otp`, { email: email.trim() })
       setOk(res.data.message || 'OTP sent!')
       setStep(2)
       setCountdown(60)
@@ -137,7 +137,7 @@ export default function ForgotPassword() {
 
     setLoading(true)
     try {
-      const res = await axios.post(`${BASE_URL}/user/reset-password`, {
+      const res = await axios.post(`${BASE_URL}/api/user/reset-password`, {
         email: email.trim(),
         otp: otp.trim(),
         newPassword,
