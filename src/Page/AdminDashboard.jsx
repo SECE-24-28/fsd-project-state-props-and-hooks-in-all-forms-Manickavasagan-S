@@ -4,7 +4,7 @@ import axios from 'axios'
 import { clearSessionUser, getSessionUser } from '../auth'
 import './dashboard.css'
 
-const API_BASE_URL = 'http://localhost:5000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const SUBJECTS = ['Mathematics', 'Science', 'English', 'History']
 
 export default function AdminDashboard() {
@@ -24,12 +24,12 @@ export default function AdminDashboard() {
 
   // Fee state
   const [feeStudent, setFeeStudent] = useState(null)
-  const [feeBalance, setFeeBalance] = useState('')
-  const [feeStatus, setFeeStatus] = useState('pending')
+  const [feeItems, setFeeItems] = useState([{ feeName: '', totalAmount: '' }])
   const [feeSaving, setFeeSaving] = useState(false)
   const [feeError, setFeeError] = useState('')
   const [feeSuccess, setFeeSuccess] = useState('')
   const [allFeeRecords, setAllFeeRecords] = useState([])
+  const [expandedFeeEmail, setExpandedFeeEmail] = useState(null)
 
   // Load users from DB
   useEffect(() => {
@@ -134,22 +134,36 @@ export default function AdminDashboard() {
   async function handleFeeStudentSelect(email) {
     const student = users.find(u => u.email === email)
     setFeeStudent(student || null)
-    setFeeBalance('')
-    setFeeStatus('pending')
+    setFeeItems([{ feeName: '', totalAmount: '' }])
     setFeeError('')
     setFeeSuccess('')
 
     if (email) {
       try {
         const res = await axios.get(`${API_BASE_URL}/api/fee`, { params: { email } })
-        if (res.data.data) {
-          setFeeBalance(res.data.data.balance)
-          setFeeStatus(res.data.data.status)
+        if (res.data.data && res.data.data.fees?.length > 0) {
+          setFeeItems(res.data.data.fees.map(f => ({
+            feeName: f.feeName,
+            totalAmount: f.totalAmount,
+          })))
         }
       } catch {
         // no existing record is fine
       }
     }
+  }
+
+  function handleFeeItemChange(index, field, value) {
+    setFeeItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
+    setFeeError('')
+  }
+
+  function addFeeItem() {
+    setFeeItems(prev => [...prev, { feeName: '', totalAmount: '' }])
+  }
+
+  function removeFeeItem(index) {
+    setFeeItems(prev => prev.filter((_, i) => i !== index))
   }
 
   async function handleSaveFee(e) {
@@ -158,21 +172,25 @@ export default function AdminDashboard() {
     setFeeSuccess('')
 
     if (!feeStudent) { setFeeError('Please select a student'); return }
-    if (feeBalance === '' || feeBalance === undefined) { setFeeError('Please enter a fee balance'); return }
+
+    const validItems = feeItems.filter(f => f.feeName.trim() !== '' && f.totalAmount !== '')
+    if (validItems.length === 0) { setFeeError('Please add at least one fee with a name and amount'); return }
+
+    for (const f of validItems) {
+      if (Number(f.totalAmount) < 0) { setFeeError('Fee amounts cannot be negative'); return }
+    }
 
     setFeeSaving(true)
     try {
-      await axios.post(`${API_BASE_URL}/api/fee`, {
+      await axios.post(`${API_BASE_URL}/api/fee/assign`, {
         email: feeStudent.email,
-        balance: feeBalance,
-        status: feeStatus,
+        fees: validItems.map(f => ({ feeName: f.feeName.trim(), totalAmount: Number(f.totalAmount) })),
       })
-      setFeeSuccess('Fee updated successfully')
-      // Refresh all fee records
+      setFeeSuccess('Fees assigned successfully')
       const res = await axios.get(`${API_BASE_URL}/api/fee/all`)
       setAllFeeRecords(res.data.data || [])
     } catch (err) {
-      setFeeError(err.response?.data?.message || 'Failed to save fee')
+      setFeeError(err.response?.data?.message || 'Failed to save fees')
     } finally {
       setFeeSaving(false)
     }
@@ -187,6 +205,10 @@ export default function AdminDashboard() {
   function getUserName(email) {
     const u = users.find(u => u.email.toLowerCase() === email.toLowerCase())
     return u ? u.name : email
+  }
+
+  function toggleExpandFee(email) {
+    setExpandedFeeEmail(prev => prev === email ? null : email)
   }
 
   return (
@@ -333,8 +355,10 @@ export default function AdminDashboard() {
         <div className="admin-section">
           <h2>Fee Management</h2>
           <div className="fees-container">
+
+            {/* Assign Fees Form */}
             <div className="fees-form">
-              <h3>Update Student Fee</h3>
+              <h3>Assign Fees to Student</h3>
               <form onSubmit={handleSaveFee}>
                 <div className="form-group">
                   <label>Select Student</label>
@@ -345,33 +369,50 @@ export default function AdminDashboard() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Fee Balance ($)</label>
-                  <input
-                    type="number" min="0" step="0.01" placeholder="0.00"
-                    className="form-input"
-                    value={feeBalance}
-                    onChange={(e) => { setFeeBalance(e.target.value); setFeeError('') }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Payment Status</label>
-                  <select value={feeStatus} onChange={(e) => setFeeStatus(e.target.value)} className="form-input">
-                    <option value="pending">Pending</option>
-                    <option value="partial">Partially Paid</option>
-                    <option value="paid">Paid</option>
-                  </select>
+
+                <div className="fee-items-list">
+                  <label className="fee-items-label">Fee Types</label>
+                  {feeItems.map((item, index) => (
+                    <div key={index} className="fee-item-row">
+                      <input
+                        type="text"
+                        placeholder="Fee name (e.g. Tuition Fee)"
+                        className="form-input fee-name-input"
+                        value={item.feeName}
+                        onChange={(e) => handleFeeItemChange(index, 'feeName', e.target.value)}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Amount ($)"
+                        className="form-input fee-amount-input"
+                        value={item.totalAmount}
+                        onChange={(e) => handleFeeItemChange(index, 'totalAmount', e.target.value)}
+                      />
+                      {feeItems.length > 1 && (
+                        <button type="button" className="remove-fee-btn" onClick={() => removeFeeItem(index)} title="Remove">
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  <button type="button" className="add-fee-btn" onClick={addFeeItem}>
+                    <i className="fa-solid fa-plus"></i> Add Another Fee
+                  </button>
                 </div>
 
                 {feeError && <div className="auth-error" style={{ marginBottom: 12 }}>{feeError}</div>}
                 {feeSuccess && <div className="marks-success">{feeSuccess}</div>}
 
                 <button type="submit" className="submit-btn" disabled={feeSaving}>
-                  {feeSaving ? 'Saving...' : 'Update Fee'}
+                  {feeSaving ? 'Saving...' : 'Assign Fees'}
                 </button>
               </form>
             </div>
 
+            {/* All Fee Records */}
             <div className="fees-list">
               <h3>All Fee Records</h3>
               {allFeeRecords.length === 0 ? (
@@ -380,17 +421,62 @@ export default function AdminDashboard() {
                   <p>No fee records yet</p>
                 </div>
               ) : (
-                <div className="marks-records-table">
-                  <div className="marks-record-header fee-record-header">
-                    <span>Student</span><span>Balance ($)</span><span>Status</span>
-                  </div>
-                  {allFeeRecords.map((f, i) => {
-                    const { label, cls } = getFeeStatusLabel(f.status)
+                <div className="fee-records-list">
+                  {allFeeRecords.map((record, i) => {
+                    const totalAssigned = record.fees.reduce((s, f) => s + f.totalAmount, 0)
+                    const totalPaid = record.fees.reduce((s, f) => s + f.amountPaid, 0)
+                    const overallPct = totalAssigned > 0 ? Math.round((totalPaid / totalAssigned) * 100) : 0
+                    const isExpanded = expandedFeeEmail === record.userEmail
+
                     return (
-                      <div key={i} className="marks-record-row">
-                        <span>{getUserName(f.userEmail)}</span>
-                        <span>${Number(f.balance).toFixed(2)}</span>
-                        <span className={`mark-badge ${cls}`}>{label}</span>
+                      <div key={i} className="fee-record-card">
+                        <div className="fee-record-card-header" onClick={() => toggleExpandFee(record.userEmail)}>
+                          <div className="fee-record-student">
+                            <strong>{getUserName(record.userEmail)}</strong>
+                            <span className="fee-record-email">{record.userEmail}</span>
+                          </div>
+                          <div className="fee-record-summary">
+                            <span className="fee-record-amounts">${totalPaid.toFixed(2)} / ${totalAssigned.toFixed(2)}</span>
+                            <div className="fee-progress-bar">
+                              <div className="fee-progress-fill" style={{ width: `${overallPct}%` }}></div>
+                            </div>
+                            <span className="fee-pct">{overallPct}%</span>
+                          </div>
+                          <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} fee-chevron`}></i>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="fee-record-details">
+                            {record.fees.map((f, j) => {
+                              const { label, cls } = getFeeStatusLabel(f.status)
+                              const remaining = f.totalAmount - f.amountPaid
+                              return (
+                                <div key={j} className="fee-detail-item">
+                                  <div className="fee-detail-item-top">
+                                    <span className="fee-detail-item-name">{f.feeName}</span>
+                                    <span className={`mark-badge ${cls}`}>{label}</span>
+                                  </div>
+                                  <div className="fee-detail-item-amounts">
+                                    <span>Total: <strong>${f.totalAmount.toFixed(2)}</strong></span>
+                                    <span>Paid: <strong>${f.amountPaid.toFixed(2)}</strong></span>
+                                    <span>Remaining: <strong>${remaining.toFixed(2)}</strong></span>
+                                  </div>
+                                  {f.payments.length > 0 && (
+                                    <div className="fee-payment-history">
+                                      <span className="fee-payment-history-title">Payment History</span>
+                                      {f.payments.map((p, k) => (
+                                        <div key={k} className="fee-payment-entry">
+                                          <span>${p.amount.toFixed(2)}</span>
+                                          <span>{new Date(p.paidAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
