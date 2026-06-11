@@ -1,3 +1,7 @@
+import axios from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 export const ADMIN_CREDENTIALS = {
   email: 'admin@test.com',
   password: 'Admin@123',
@@ -26,6 +30,7 @@ export const FEATURES = [
   },
 ]
 
+// Session management
 export function getSessionUser() {
   const raw = sessionStorage.getItem('activeUser')
   try {
@@ -43,69 +48,61 @@ export function clearSessionUser() {
   sessionStorage.removeItem('activeUser')
 }
 
-export function getStoredUsers() {
-  const raw = localStorage.getItem('users')
+// API functions for backend integration
+export async function apiLogin(email, password) {
+  if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
+    return ADMIN_CREDENTIALS
+  }
+  
+  const response = await axios.get(`${API_BASE_URL}/api/user/login`, {
+    params: { email: email.trim(), password }
+  })
+  return response.data.data
+}
+
+export async function apiSignup(userData) {
+  const response = await axios.post(`${API_BASE_URL}/api/user/signup`, userData)
+  return response.data.data
+}
+
+export async function apiGetAllUsers() {
+  const response = await axios.get(`${API_BASE_URL}/api/user/all`)
+  return response.data.data
+}
+
+export async function apiSendOtp(email) {
+  const response = await axios.post(`${API_BASE_URL}/api/user/send-otp`, { email })
+  return response.data
+}
+
+export async function apiResetPassword(email, otp, newPassword) {
+  const response = await axios.post(`${API_BASE_URL}/api/user/reset-password`, {
+    email, otp, newPassword
+  })
+  return response.data
+}
+
+// Legacy functions for backward compatibility (now use API)
+export async function validateLogin(email, password) {
   try {
-    return raw ? JSON.parse(raw) : []
-  } catch (err) {
+    return await apiLogin(email, password)
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function createUser(userData) {
+  try {
+    return await apiSignup(userData)
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function getManagedUsers() {
+  try {
+    return await apiGetAllUsers()
+  } catch (error) {
     return []
   }
-}
-
-export function saveStoredUsers(users) {
-  localStorage.setItem('users', JSON.stringify(users))
-}
-
-export function findUser(email, password) {
-  return getStoredUsers().find(
-    u => u.email.toLowerCase() === email.toLowerCase() && u.password === password,
-  )
-}
-
-export function createUser({ name, email, password }) {
-  const users = getStoredUsers()
-  const exists = users.some(u => u.email.toLowerCase() === email.toLowerCase())
-  if (exists) return null
-
-  const newUser = { 
-    name, 
-    email, 
-    password, 
-    role: 'user',
-    status: 'active',
-    createdAt: new Date().toISOString(),
-  }
-  users.push(newUser)
-  saveStoredUsers(users)
-  return newUser
-}
-
-export function validateLogin(email, password) {
-  if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-    return {
-      name: ADMIN_CREDENTIALS.name,
-      email: ADMIN_CREDENTIALS.email,
-      role: ADMIN_CREDENTIALS.role,
-    }
-  }
-  return findUser(email, password)
-}
-
-export function updateUserStatus(email, status) {
-  const users = getStoredUsers()
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase())
-  if (user) {
-    user.status = status
-    saveStoredUsers(users)
-  }
-}
-
-export function deleteUser(email) {
-  const users = getStoredUsers()
-  const filtered = users.filter(u => u.email.toLowerCase() !== email.toLowerCase())
-  saveStoredUsers(filtered)
-}
-
-export function getManagedUsers() {
-  return getStoredUsers()
 }

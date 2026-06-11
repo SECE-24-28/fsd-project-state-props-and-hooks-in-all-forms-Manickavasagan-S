@@ -1,121 +1,129 @@
 import React, { useState, useEffect } from 'react'
-import { TextField, Button, CircularProgress } from '@mui/material'
 import { useNavigate, NavLink } from 'react-router-dom'
 import axios from 'axios'
-import './auth.css'
+import Logo from '../assets/Logo.png'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export default function SignIn() {
-	const [firstname, setFirstname] = useState('')
-	const [lastname, setLastname] = useState('')
-	const [email, setEmail] = useState('')
-	const [password, setPassword] = useState('')
-	const [error, setError] = useState('')
-	const [loading, setLoading] = useState(false)
+  const [firstname, setFirstname] = useState('')
+  const [lastname, setLastname] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
-	const navigate = useNavigate()
+  useEffect(() => {
+    if (error) {
+      const t = setTimeout(() => setError(''), 5000)
+      return () => clearTimeout(t)
+    }
+  }, [error])
 
-	useEffect(() => {
-		if (error) {
-			const timer = setTimeout(() => setError(''), 5000)
-			return () => clearTimeout(timer)
-		}
-	}, [error])
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    if (!firstname.trim() || !lastname.trim() || !email.trim() || !password.trim()) {
+      setError('Please fill in all fields')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/user/signup`, {
+        firstname: firstname.trim(),
+        lastname: lastname.trim(),
+        email: email.trim(),
+        password,
+      })
+      if (res.status === 201 || res.status === 200) {
+        navigate('/dashboard', { replace: true })
+      }
+    } catch (err) {
+      if (err.response?.status === 400) setError(err.response.data?.message || 'Email already exists.')
+      else if (err.response?.status === 500) setError('Server error. Please try again later.')
+      else if (err.message === 'Network Error') setError('Cannot connect to server. Make sure backend is running.')
+      else setError(err.response?.data?.message || 'Sign up failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-	async function handleSubmit(e) {
-		e.preventDefault()
-		setError('')
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo-row">
+          <img src={Logo} alt="IET College" />
+          <span>IET College</span>
+        </div>
+        <h1>Create Account</h1>
+        <p className="auth-subtitle">Register for the student portal</p>
 
-		if (!firstname.trim() || !lastname.trim() || !email.trim() || !password.trim()) {
-			setError('Please fill in all fields')
-			return
-		}
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="auth-field">
+              <label htmlFor="si-first">First Name</label>
+              <input
+                id="si-first"
+                placeholder="First name"
+                value={firstname}
+                onChange={e => setFirstname(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+            <div className="auth-field">
+              <label htmlFor="si-last">Last Name</label>
+              <input
+                id="si-last"
+                placeholder="Last name"
+                value={lastname}
+                onChange={e => setLastname(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+          </div>
 
-		setLoading(true)
+          <div className="auth-field">
+            <label htmlFor="si-email">Email Address</label>
+            <input
+              id="si-email"
+              type="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              disabled={loading}
+              autoComplete="email"
+            />
+          </div>
 
-		try {
-			const response = await axios.post(`${API_BASE_URL}/api/user/signup`, {
-				firstname: firstname.trim(),
-				lastname: lastname.trim(),
-				email: email.trim(),
-				password: password
-			})
+          <div className="auth-field">
+            <label htmlFor="si-pass">Password</label>
+            <input
+              id="si-pass"
+              type="password"
+              placeholder="Create a strong password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              disabled={loading}
+              autoComplete="new-password"
+            />
+          </div>
 
-			if (response.status === 201 || response.status === 200) {
-				setFirstname('')
-				setLastname('')
-				setEmail('')
-				setPassword('')
-				navigate('/dashboard', { replace: true })
-			}
-		} catch (err) {
-			if (err.response?.status === 400) {
-				setError(err.response.data?.message || 'Email already exists')
-			} else if (err.response?.status === 500) {
-				setError('Server error. Please try again later')
-			} else if (err.message === 'Network Error') {
-				setError('Cannot connect to server. Make sure backend is running')
-			} else {
-				setError(err.response?.data?.message || 'Sign up failed. Please try again')
-			}
-			console.error('Sign up error:', err)
-		} finally {
-			setLoading(false)
-		}
-	}
+          {error && <div className="auth-error">{error}</div>}
 
-	return (
-		<div className="auth-page">
-			<div className="auth-card">
-				<h1>Create an account</h1>
-				<form className="auth-form" onSubmit={handleSubmit}>
-					<TextField
-						label="First Name"
-						value={firstname}
-						onChange={e => setFirstname(e.target.value)}
-						fullWidth
-						margin="normal"
-						disabled={loading}
-					/>
-					<TextField
-						label="Last Name"
-						value={lastname}
-						onChange={e => setLastname(e.target.value)}
-						fullWidth
-						margin="normal"
-						disabled={loading}
-					/>
-					<TextField
-						label="Email"
-						type="email"
-						value={email}
-						onChange={e => setEmail(e.target.value)}
-						fullWidth
-						margin="normal"
-						disabled={loading}
-					/>
-					<TextField
-						label="Password"
-						type="password"
-						value={password}
-						onChange={e => setPassword(e.target.value)}
-						fullWidth
-						margin="normal"
-						disabled={loading}
-					/>
-					{error && <div className="auth-error">{error}</div>}
-					<div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: '8px', alignItems: 'center' }}>
-						{loading && <CircularProgress size={24} />}
-						<Button type="submit" variant="contained" disabled={loading}>
-							{loading ? 'Creating account...' : 'Create account'}
-						</Button>
-					</div>
-					<div style={{ marginTop: 12 }}>
-						Already have an account? <NavLink to="/login" className="auth-small-link">Sign in</NavLink>
-					</div>
-				</form>
-			</div>
-		</div>
-	)
+          <button type="submit" className="auth-btn" disabled={loading}>
+            {loading
+              ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: 8 }} />Creating account…</>
+              : <><i className="fa-solid fa-user-plus" style={{ marginRight: 8 }} />Create Account</>
+            }
+          </button>
+
+          <div className="auth-divider">
+            Already have an account?{' '}
+            <NavLink to="/login" className="auth-small-link">Sign in</NavLink>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
 }
